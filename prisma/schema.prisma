@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model clients {
+  Id             String           @id
+  email          String           @unique
+  phoneNumber    String
+  firstName      String
+  lastName       String
+  photoUrl       String
+  idPhotoUrl     String
+  dateCreated    DateTime         @default(now())
+  dateUpdated    DateTime         @updatedAt
+  isVerified     Boolean          @default(false)
+  selfieImage    String?          @default("")
+  activeJobs     ActiveJobs[]
+  ClientReview   ClientReview[]
+  Contacts       Contacts[]
+  courierJobs    CourierJobs[]
+  DirectRequest  DirectRequest[]
+  driverRequests DriverRequests[]
+  Review         DriverReview[]
+  Messages       Messages[]
+  clientRequests clientRequests[]
+}
+
+model Drivers {
+  Id                    String           @id
+  email                 String           @unique
+  phoneNumber           String?
+  firstName             String
+  lastName              String
+  photoUrl              String
+  idPhotoUrl            String
+  vehicleType           String?
+  dateCreated           DateTime         @default(now())
+  dateUpdated           DateTime         @updatedAt
+  idNumber              String?
+  licenseExpiry         String?
+  licenseNumber         String?
+  plateNumber           String?
+  discExpiry            String?
+  discPhotoUrl          String?
+  licensePhotoUrl       String?
+  location              String?
+  isVerified            Boolean          @default(false)
+  isOnline              Boolean          @default(false)
+  rating                Float?
+  vehicleRegistrationNo String?
+  vehicleImagesUrls     String?
+  activeJobs            ActiveJobs[]
+  ClientReview          ClientReview[]
+  Contacts              Contacts[]
+  DirectRequest         DirectRequest[]
+  driveRequests         DriverRequests[]
+  Review                DriverReview[]
+  JobRequests           JobRequest[]
+  Location              Location[]
+  Messages              Messages[]
+  scheduledTrips        ScheduledTrips[]
+  clientRequests        clientRequests[]
+}
+
+model DriverReview {
+  id        String   @id
+  content   String?
+  rating    Int
+  createdAt DateTime @default(now())
+  driverId  String
+  clientId  String
+  client    clients  @relation(fields: [clientId], references: [Id])
+  driver    Drivers  @relation(fields: [driverId], references: [Id])
+
+  @@index([driverId])
+}
+
+model ClientReview {
+  id        String   @id
+  content   String?
+  rating    Int
+  createdAt DateTime @default(now())
+  clientId  String
+  driverId  String
+  client    clients  @relation(fields: [clientId], references: [Id])
+  driver    Drivers  @relation(fields: [driverId], references: [Id])
+
+  @@index([driverId])
+}
+
+model CourierJobs {
+  Id                 String          @id @default(uuid())
+  Title              String?         @default("")
+  Description        String?         @default("")
+  Budget             String?         @default("80")
+  clientId           String
+  DropOff            String?         @default("")
+  districtDropOff    String?         @default("")
+  PickUp             String?         @default("")
+  districtPickUp     String?         @default("")
+  parcelSize         String?         @default("")
+  pickupPhoneNumber  String?         @default("")
+  dropoffPhoneNumber String?         @default("")
+  dropOffEmail       String?         @default("")
+  collectionDate     DateTime        @default(now())
+  dateCreated        DateTime        @default(now())
+  packageStatus      String?         @default("")
+  approvedRequestId  String?         @unique
+  dimensions         String?         @default("")
+  suitableVehicles   String?         @default("")
+  weight             String?         @default("")
+  isDirect           Boolean         @default(false)
+  clientGender       String?         @default("")
+  clientIdName       String?         @default("")
+  deliveryDate       DateTime        @default(now())
+  isPackaged         Boolean         @default(false)
+  packageType        String?         @default("")
+  parcelHandling     String?         @default("")
+  recipientGender    String?         @default("")
+  recipientName      String?         @default("")
+  urgency            String?         @default("")
+  paymentMethod      String?         @default("")
+  isPaid             Boolean         @default(false)
+  releasePayment     Boolean         @default(false)
+  DropOffLocation    String?         @default("")
+  PickUpLocation     String?         @default("")
+  activeJobs         ActiveJobs[]
+  approvedRequest    JobRequest?     @relation("ApprovedRequest", fields: [approvedRequestId], references: [Id])
+  client             clients         @relation(fields: [clientId], references: [Id])
+  DirectRequest      DirectRequest[]
+  JobRequests        JobRequest[]    @relation("CourierJobsToJobRequest")
+}
+
+model DriverRequests {
+  Id         String  @id @default(uuid())
+  receiverId String
+  senderId   String
+  isAccepted Boolean @default(false)
+  isPending  Boolean @default(false)
+  receiver   clients @relation(fields: [receiverId], references: [Id])
+  sender     Drivers @relation(fields: [senderId], references: [Id])
+}
+
+model clientRequests {
+  Id         String  @id @default(uuid())
+  senderId   String
+  receiverId String
+  isAccepted Boolean @default(false)
+  isPending  Boolean @default(false)
+  receiver   Drivers @relation(fields: [receiverId], references: [Id])
+  sender     clients @relation(fields: [senderId], references: [Id])
+}
+
+model UserRole {
+  userId String  @id
+  driver Boolean @default(false)
+  client Boolean @default(false)
+}
+
+model Contacts {
+  Id             String  @id @default(uuid())
+  driverId       String
+  clientId       String
+  isConversating Boolean @default(false)
+  client         clients @relation(fields: [clientId], references: [Id])
+  driver         Drivers @relation(fields: [driverId], references: [Id])
+}
+
+model Messages {
+  Id       String  @id @default(uuid())
+  message  String
+  driverId String
+  clientId String
+  senderId String
+  client   clients @relation(fields: [clientId], references: [Id])
+  driver   Drivers @relation(fields: [driverId], references: [Id])
+}
+
+model JobRequest {
+  Id           String       @id @default(uuid())
+  isApproved   Boolean      @default(false)
+  courierJobId String
+  driverId     String
+  approvedJob  CourierJobs? @relation("ApprovedRequest")
+  CourierJob   CourierJobs  @relation("CourierJobsToJobRequest", fields: [courierJobId], references: [Id])
+  Driver       Drivers      @relation(fields: [driverId], references: [Id])
+}
+
+model DirectRequest {
+  Id           String      @id @default(uuid())
+  courierJobId String
+  clientId     String
+  driverId     String
+  isApproved   Boolean     @default(false)
+  dateCreated  DateTime    @default(now())
+  Client       clients     @relation(fields: [clientId], references: [Id])
+  CourierJob   CourierJobs @relation(fields: [courierJobId], references: [Id])
+  Driver       Drivers     @relation(fields: [driverId], references: [Id])
+}
+
+model ActiveJobs {
+  Id            String         @id @default(uuid())
+  courierJobId  String
+  driverId      String
+  clientId      String
+  startDate     String
+  endDate       String?
+  jobStatus     String         @default("ongoing")
+  Client        clients        @relation(fields: [clientId], references: [Id])
+  CourierJob    CourierJobs    @relation(fields: [courierJobId], references: [Id])
+  Driver        Drivers        @relation(fields: [driverId], references: [Id])
+  DeliveredJobs DeliveredJobs?
+}
+
+model DeliveredJobs {
+  Id                 String     @id @default(uuid())
+  activeJobId        String     @unique
+  locationId         String
+  deliveryDate       DateTime   @default(now())
+  proofOfDeliveryUrl String
+  isDriverConfirmed  Boolean    @default(true)
+  isClientConfirmed  Boolean    @default(false)
+  ActiveJob          ActiveJobs @relation(fields: [activeJobId], references: [Id])
+  Location           Location   @relation(fields: [locationId], references: [Id])
+}
+
+model Location {
+  Id            String          @id @default(uuid())
+  time          DateTime        @default(now())
+  latitude      Float
+  longitude     Float
+  accuracy      Float
+  driverId      String
+  DeliveredJobs DeliveredJobs[]
+  driver        Drivers         @relation(fields: [driverId], references: [Id])
+}
+
+model ScheduledTrips {
+  id           String     @id @default(cuid())
+  driverId     String
+  fromLocation String
+  toLocation   String
+  routeDetails String
+  tripDate     DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  status       TripStatus @default(SCHEDULED)
+  driver       Drivers    @relation(fields: [driverId], references: [Id])
+}
+
+model FCMTokens {
+  userId String @id
+  token  String
+}
+
+enum TripStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
